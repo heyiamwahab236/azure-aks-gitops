@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: order-platform-frontend:local
+          image: order-platform-frontend:portfolio-20260912
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -38,3 +38,4 @@ spec:
         - name: frontend-nginx-config
           configMap:
             name: frontend-nginx-config
+

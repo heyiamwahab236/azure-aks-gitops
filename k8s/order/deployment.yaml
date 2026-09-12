@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: order-service:recovery-v1
+          image: order-service:portfolio-20260912
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -37,3 +37,4 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+

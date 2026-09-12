@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: notification-service:recovery-v1
+          image: notification-service:portfolio-20260912
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -37,3 +37,4 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+

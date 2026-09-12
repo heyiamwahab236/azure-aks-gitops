@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: payment-service:recovery-v1
+          image: payment-service:portfolio-20260912
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -37,3 +37,4 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+
