@@ -1,8 +1,29 @@
-# Event-driven Order Platform
+# Event-driven Order Platform | Kubernetes DevOps Portfolio
 
 A hands-on DevOps portfolio: four Python/FastAPI services process orders through RabbitMQ, with PostgreSQL transactions, a browser dashboard, Kubernetes deployment, delivery automation and operational evidence.
 
 **Current environment: local Minikube.** The repository name describes the Azure direction; Terraform for AKS/ACR is prepared and validated, not deployed. Payments are simulations and notifications are database records. The frontend is HTML/CSS/JavaScript served by unprivileged Nginx.
+
+## Project at a glance
+
+**Purpose:** demonstrate deployment, reliability, observability and troubleshooting for an asynchronous order-processing application.
+
+**Stack:** Python/FastAPI · Docker · Kubernetes/Minikube · Helm · Argo CD · RabbitMQ · PostgreSQL · Prometheus · Grafana · JMeter · Bandit · pip-audit · Trivy · ZAP. Optional Azure infrastructure is defined in Terraform.
+
+| Engineering work | Evidence |
+| --- | --- |
+| Reliable events and stock handling | Outbox/inbox transactions, duplicate-delivery, concurrent-stock and broker-recovery checks |
+| GitOps deployment | Argo CD Synced/Healthy; deliberate replica drift automatically corrected |
+| Operational troubleshooting | Database DNS failure diagnosed from logs; final 25-user test completed 7,500 read requests without errors |
+| Security verification | Source/dependency/image checks, SBOM and passive web scan; unresolved findings documented |
+
+**Start here:** [Screenshots and project overview](docs/EMPLOYER_OVERVIEW.md) · [Measured results](docs/PORTFOLIO_REPORT.md) · [Resume entry](docs/RESUME_PROJECT.md)
+
+![Completed order and event timeline](docs/screenshots/order-completed.png)
+*Actual local application: an order progresses from creation through stock reservation to simulated payment completion.*
+
+![Argo CD application status](docs/screenshots/argocd.png)
+*Actual GitOps application, captured Healthy and Synced.*
 
 ![Implemented local architecture](docs/architecture.svg)
 
