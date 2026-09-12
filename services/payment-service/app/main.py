@@ -1,114 +1,30 @@
-import json
-import logging
-import os
-from sqlalchemy.exc import OperationalError
-import threading
-import time
-from datetime import datetime, UTC
+from datetime import datetime
+from fastapi import FastAPI
+from sqlmodel import Field, SQLModel, Session, select
+from shared.runtime import Runtime, emit, now
 
-import pika
-from fastapi import FastAPI, HTTPException
-from sqlmodel import Field, SQLModel, Session, create_engine, select
-
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///payments.db")
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
-EXCHANGE = "order.events"
-QUEUE = "payment.inventory-reserved"
-
-
-engine = create_engine(DATABASE_URL, echo=False)
-app = FastAPI(title="Payment Service", version="0.1.0")
+runtime = Runtime('payment', 'payment.inventory-reserved')
+engine = runtime.engine
+app = FastAPI(title='Payment Service (simulation)', version='0.2.0')
 
 
 class Payment(SQLModel, table=True):
-    __tablename__ = "payments"
-
+    __tablename__ = 'payments'
     id: int | None = Field(default=None, primary_key=True)
     order_id: str
     status: str
     created_at: datetime
 
 
-def handle_inventory_reserved(channel, method, properties, body) -> None:
-    event = json.loads(body)
-    status = "completed"
+def pay(session, event):
+    session.add(Payment(order_id=event['order_id'], status='completed', created_at=now()))
+    emit(session, 'payment', {**event, 'event_type': 'payment.completed'})
+
+
+runtime.install(app, pay)
+
+
+@app.get('/payments')
+def payments():
     with Session(engine) as session:
-        session.add(Payment(order_id=event["order_id"], status=status, created_at=datetime.now(UTC)))
-        session.commit()
-
-    payment_event = {
-        "event_type": "payment.completed",
-        "order_id": event["order_id"],
-        "customer_id": event["customer_id"],
-        "created_at": datetime.now(UTC).isoformat(),
-    }
-    channel.basic_publish(
-        exchange=EXCHANGE,
-        routing_key="payment.completed",
-        body=json.dumps(payment_event).encode("utf-8"),
-        properties=pika.BasicProperties(content_type="application/json", delivery_mode=2),
-    )
-    channel.basic_ack(delivery_tag=method.delivery_tag)
-
-
-consumer_ready = threading.Event()
-logger = logging.getLogger(__name__)
-
-
-def consume() -> None:
-    while True:
-        connection = None
-        try:
-            params = pika.URLParameters(RABBITMQ_URL)
-            connection = pika.BlockingConnection(params)
-            channel = connection.channel()
-            channel.exchange_declare(exchange=EXCHANGE, exchange_type="topic", durable=True)
-            channel.queue_declare(queue=QUEUE, durable=True)
-            channel.queue_bind(exchange=EXCHANGE, queue=QUEUE, routing_key="inventory.reserved")
-            channel.basic_qos(prefetch_count=1)
-            channel.basic_consume(queue=QUEUE, on_message_callback=handle_inventory_reserved)
-            consumer_ready.set()
-            channel.start_consuming()
-        except (pika.exceptions.AMQPConnectionError, OSError) as exc:
-            logger.warning("RabbitMQ unavailable (%s); retrying in 5 seconds", type(exc).__name__)
-        finally:
-            consumer_ready.clear()
-            if connection is not None and connection.is_open:
-                try:
-                    connection.close()
-                except (pika.exceptions.AMQPError, OSError):
-                    pass
-        time.sleep(5)
-
-
-@app.get("/ready")
-def ready() -> dict:
-    if not consumer_ready.is_set():
-        raise HTTPException(status_code=503, detail="RabbitMQ consumer is disconnected")
-    return {"status": "ready"}
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    # Allow database/DNS recovery during a cluster restart.
-    for attempt in range(24):
-        try:
-            SQLModel.metadata.create_all(engine)
-            break
-        except OperationalError:
-            if attempt == 23:
-                raise
-            time.sleep(5)
-    threading.Thread(target=consume, daemon=True).start()
-
-
-@app.get("/health")
-def health() -> dict:
-    return {"status": "ok", "service": "payment-service"}
-
-
-@app.get("/payments")
-def payments() -> list[Payment]:
-    with Session(engine) as session:
-        return session.exec(select(Payment)).all()
+        return session.exec(select(Payment).order_by(Payment.created_at.desc()).limit(200)).all()

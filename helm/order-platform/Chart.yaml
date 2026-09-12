@@ -1,6 +1,6 @@
 apiVersion: v2
 name: order-platform
-description: Local event-driven order processing platform
+description: Stateless order platform; storage and secrets managed separately
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.2.0
+appVersion: "0.2.0"

@@ -23,3 +23,8 @@ Thumbs.db
 k8s/config/secrets.yaml
 *.db
 *.sqlite*
+
+.pytest_cache/
+reports/
+*.jtl
+*.log

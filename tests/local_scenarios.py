@@ -81,6 +81,21 @@ else:
 orders = request('orders')
 check(not any(row['customer_id'] == RUN + '-invalid' for row in orders), 'invalid request persisted an order')
 print('PASS invalid input: zero quantity, negative quantity, and missing items return 422; no order persisted', flush=True)
-for order_id in (happy, failed):
-    row = next(row for row in orders if row['id'] == order_id)
-    print(f'OBSERVED order status: {order_id}: {row["status"]} (status propagation is Stage 2)', flush=True)
+for order_id, expected in ((happy, 'completed'), (failed, 'failed')):
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        detail = request('orders/' + order_id)
+        if detail['status'] == expected:
+            break
+        time.sleep(1)
+    check(detail['status'] == expected, f'{order_id}: expected status {expected}')
+    check(any(row['event_type'] == 'order.created' for row in detail['timeline']), 'creation missing from timeline')
+    print(f'PASS status and timeline: {order_id}: {expected}', flush=True)
+for items in ([], [{'product_id': sku, 'quantity': 1}] * 2):
+    try:
+        request('orders', {'customer_id': RUN + '-invalid', 'items': items})
+    except HTTPError as error:
+        check(error.code == 422, 'invalid items must return 422')
+    else:
+        raise SystemExit('FAIL: empty or duplicate items accepted')
+print('PASS empty and duplicate item lists rejected', flush=True)

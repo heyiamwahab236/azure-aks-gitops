@@ -1,3 +1,3 @@
-# deploy/helm
+# Helm
 
-Placeholder for project files. Implementation pending.
+The maintained application chart is ../../helm/order-platform. It renders stateless application resources only. Database/broker storage and credentials are excluded.

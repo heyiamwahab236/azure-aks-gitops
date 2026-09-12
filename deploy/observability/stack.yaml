@@ -1,0 +1,233 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: order-observability
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: order-observability
+data:
+  prometheus.yml: "global:\n  evaluation_interval: 5s\n  scrape_interval: 5s\nrule_files:\n\
+    - /etc/prometheus/alerts.yml\nscrape_configs:\n- job_name: order-platform\n  static_configs:\n\
+    \  - labels:\n      service: order\n    targets:\n    - order-service.order-platform.svc.cluster.local:80\n\
+    \  - labels:\n      service: inventory\n    targets:\n    - inventory-service.order-platform.svc.cluster.local:80\n\
+    \  - labels:\n      service: payment\n    targets:\n    - payment-service.order-platform.svc.cluster.local:80\n\
+    \  - labels:\n      service: notification\n    targets:\n    - notification-service.order-platform.svc.cluster.local:80\n"
+  alerts.yml: "groups:\n- name: order-platform\n  rules:\n  - alert: ServiceUnavailable\n\
+    \    annotations:\n      summary: Application metrics target unavailable\n   \
+    \ expr: up{job=\"order-platform\"} == 0\n    for: 1m\n    labels:\n      severity:\
+    \ warning\n  - alert: OutboxBacklog\n    annotations:\n      summary: Events waiting\
+    \ to publish for over one minute\n    expr: platform_outbox_pending > 0\n    for:\
+    \ 1m\n    labels:\n      severity: warning\n  - alert: ConsumerDisconnected\n\
+    \    annotations:\n      summary: RabbitMQ consumer disconnected\n    expr: platform_consumer_connected\
+    \ == 0\n    for: 1m\n    labels:\n      severity: warning\n  - alert: DeadLetteredEvent\n\
+    \    annotations:\n      summary: Inspect the service dead-letter queue\n    expr:\
+    \ increase(platform_events_total{outcome=\"dead_letter\"}[10m]) > 0\n    labels:\n\
+    \      severity: warning\n"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: order-observability
+data:
+  order-platform.json: '{"uid": "order-platform", "title": "Order Platform \u2014
+    Local Operations", "schemaVersion": 39, "version": 1, "refresh": "5s", "time":
+    {"from": "now-15m", "to": "now"}, "panels": [{"id": 1, "title": "Request rate",
+    "type": "timeseries", "datasource": {"type": "prometheus", "uid": "prometheus"},
+    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "targets": [{"refId": "A", "expr":
+    "sum by (service) (rate(platform_http_duration_seconds_count[1m]))"}]}, {"id":
+    2, "title": "HTTP p95 (seconds)", "type": "timeseries", "datasource": {"type":
+    "prometheus", "uid": "prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y":
+    0}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, service)
+    (rate(platform_http_duration_seconds_bucket[1m])))"}]}, {"id": 3, "title": "Events
+    waiting to publish", "type": "timeseries", "datasource": {"type": "prometheus",
+    "uid": "prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}, "targets":
+    [{"refId": "A", "expr": "platform_outbox_pending"}]}, {"id": 4, "title": "Consumer
+    connected (1=yes)", "type": "timeseries", "datasource": {"type": "prometheus",
+    "uid": "prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}, "targets":
+    [{"refId": "A", "expr": "platform_consumer_connected"}]}, {"id": 5, "title": "Event
+    processing outcomes", "type": "timeseries", "datasource": {"type": "prometheus",
+    "uid": "prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}, "targets":
+    [{"refId": "A", "expr": "sum by (service,outcome) (increase(platform_events_total[5m]))"}]},
+    {"id": 6, "title": "HTTP errors", "type": "timeseries", "datasource": {"type":
+    "prometheus", "uid": "prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y":
+    16}, "targets": [{"refId": "A", "expr": "sum by (service) (rate(platform_http_duration_seconds_count{status=~\"5..\"}[1m]))"}]}]}'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning
+  namespace: order-observability
+data:
+  datasources.yaml: "apiVersion: 1\ndatasources:\n- access: proxy\n  isDefault: true\n\
+    \  name: Prometheus\n  type: prometheus\n  uid: prometheus\n  url: http://prometheus:9090\n"
+  dashboards.yaml: "apiVersion: 1\nproviders:\n- name: platform\n  options:\n    path:\
+    \ /var/lib/grafana/dashboards\n  type: file\n"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: order-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 65534
+        runAsNonRoot: true
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v3.14.0
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: data
+          mountPath: /prometheus
+        env: []
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 10
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=6h
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: data
+        emptyDir:
+          sizeLimit: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: order-observability
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: order-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 472
+        runAsNonRoot: true
+        fsGroup: 472
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: grafana
+        image: grafana/grafana:13.2.1
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: config
+          mountPath: /etc/grafana/provisioning/datasources/default.yaml
+          subPath: datasources.yaml
+        - name: config
+          mountPath: /etc/grafana/provisioning/dashboards/default.yaml
+          subPath: dashboards.yaml
+        - name: dashboards
+          mountPath: /var/lib/grafana/dashboards
+        - name: data
+          mountPath: /var/lib/grafana
+        env:
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: 'true'
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: GF_AUTH_DISABLE_LOGIN_FORM
+          value: 'true'
+        - name: GF_ANALYTICS_REPORTING_ENABLED
+          value: 'false'
+        - name: GF_PLUGINS_PREINSTALL_DISABLED
+          value: 'true'
+        - name: GF_PLUGINS_PREINSTALL_AUTO_UPDATE
+          value: 'false'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: grafana-provisioning
+      - name: dashboards
+        configMap:
+          name: grafana-dashboards
+      - name: data
+        emptyDir:
+          sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: order-observability
+spec:
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000

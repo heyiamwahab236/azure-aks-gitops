@@ -4,31 +4,17 @@ metadata:
   name: frontend-nginx-config
   namespace: order-platform
 data:
-  default.conf: |
-    server {
-        listen 80;
-        server_name _;
-
-        root /usr/share/nginx/html;
-        index index.html;
-
-        location / {
-            try_files $uri $uri/ /index.html;
-        }
-
-        location /api/orders {
-            proxy_pass http://order-service:80/orders;
-        }
-
-        location /api/inventory {
-            proxy_pass http://inventory-service:80/inventory;
-        }
-
-        location /api/payments {
-            proxy_pass http://payment-service:80/payments;
-        }
-
-        location /api/notifications {
-            proxy_pass http://notification-service:80/notifications;
-        }
-    }
+  default.conf: "server {\n    listen 8080;\n    server_name _;\n    server_tokens\
+    \ off;\n    add_header Cross-Origin-Embedder-Policy require-corp always;\n   \
+    \ add_header Cross-Origin-Opener-Policy same-origin always;\n    add_header Cross-Origin-Resource-Policy\
+    \ same-origin always;\n    add_header Permissions-Policy \"camera=(), microphone=(),\
+    \ geolocation=()\" always;\n    root /usr/share/nginx/html;\n    index index.html;\n\
+    \    add_header X-Content-Type-Options nosniff always;\n    add_header X-Frame-Options\
+    \ DENY always;\n    add_header Content-Security-Policy \"default-src 'self'; style-src\
+    \ 'self'; script-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri\
+    \ 'self'; object-src 'none'\" always;\n    location / { try_files $uri $uri/ /index.html;\
+    \ }\n    location /api/orders { proxy_pass http://order-service:80/orders; }\n\
+    \    location /api/inventory { proxy_pass http://inventory-service:80/inventory;\
+    \ }\n    location /api/payments { proxy_pass http://payment-service:80/payments;\
+    \ }\n    location /api/notifications { proxy_pass http://notification-service:80/notifications;\
+    \ }\n}\n"

@@ -1,20 +1,8 @@
-global:
-  databaseUrl: postgresql+psycopg://app:app@postgres:5432/orders
-  rabbitmqUrl: amqp://guest:guest@rabbitmq:5672/
-
-services:
-  order:
-    image: order-service:local
-    port: 8000
-  inventory:
-    image: inventory-service:local
-    port: 8000
-  payment:
-    image: payment-service:local
-    port: 8000
-  notification:
-    image: notification-service:local
-    port: 8000
-  frontend:
-    image: order-platform-frontend:local
-    port: 80
+imageTag: portfolio-v2-20260912e
+replicas: 1
+images:
+  order: order-service
+  inventory: inventory-service
+  payment: payment-service
+  notification: notification-service
+  frontend: order-platform-frontend
