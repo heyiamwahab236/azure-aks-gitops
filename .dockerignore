@@ -1,0 +1,10 @@
+.git
+.env*
+**/__pycache__
+**/.pytest_cache
+**/*.db
+**/*.tfstate*
+**/*.tfvars
+**/secrets.yaml
+docs
+work

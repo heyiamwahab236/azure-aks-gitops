@@ -14,27 +14,69 @@ spec:
         app: inventory-service
     spec:
       containers:
-        - name: inventory-service
-          image: inventory-service:portfolio-20260912
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8000
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-credentials
-                  key: DATABASE_URL
-            - name: RABBITMQ_URL
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-credentials
-                  key: RABBITMQ_URL
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-
+      - name: inventory-service
+        image: inventory-service:portfolio-v2-20260912e
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: DATABASE_URL
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: RABBITMQ_URL
+        - name: DATABASE_HOST
+          value: postgres.order-platform.svc.cluster.local.
+        - name: RABBITMQ_HOST
+          value: rabbitmq.order-platform.svc.cluster.local.
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          periodSeconds: 5
+          timeoutSeconds: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 384Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          periodSeconds: 10
+          timeoutSeconds: 2
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          periodSeconds: 2
+          failureThreshold: 60
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi

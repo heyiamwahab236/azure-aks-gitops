@@ -1,106 +1,57 @@
-const form = document.querySelector("#orderForm");
-const refreshButton = document.querySelector("#refreshButton");
-const formStatus = document.querySelector("#formStatus");
-
-const views = {
-  orders: document.querySelector("#orders"),
-  inventory: document.querySelector("#inventory"),
-  payments: document.querySelector("#payments"),
-  notifications: document.querySelector("#notifications"),
-};
-
-const counts = {
-  orders: document.querySelector("#orderCount"),
-  payments: document.querySelector("#paymentCount"),
-  notifications: document.querySelector("#notificationCount"),
-};
-
-async function requestJson(url, options) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
-  }
+const form = document.querySelector('#orderForm');
+const status = document.querySelector('#formStatus');
+let selectedOrder = null;
+let refreshing = false;
+async function api(path, options) {
+  const response = await fetch('/api/' + path, options);
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
   return response.json();
 }
-
-function renderList(target, rows, mapper) {
-  if (!rows.length) {
-    target.innerHTML = '<p class="empty">No records yet.</p>';
-    return;
+function list(id, rows, describe, select) {
+  const target = document.getElementById(id);
+  target.replaceChildren();
+  if (!rows.length) { target.textContent = 'No records yet.'; return; }
+  for (const row of rows) {
+    const article = document.createElement('article'); article.className = 'row';
+    const title = document.createElement(select ? 'button' : 'strong');
+    const [heading, detail] = describe(row);
+    title.textContent = heading;
+    if (select) { title.type = 'button'; title.onclick = () => { selectedOrder = row.id; showTimeline().catch(showError); }; }
+    const small = document.createElement('small'); small.textContent = detail;
+    article.append(title, small); target.append(article);
   }
-
-  target.innerHTML = rows
-    .map((row) => {
-      const item = mapper(row);
-      return `
-        <article class="row">
-          <strong>${item.title}</strong>
-          <small>${item.detail}</small>
-        </article>
-      `;
-    })
-    .join("");
 }
-
+function showError(error) { status.textContent = error.message; }
+async function showTimeline() {
+  if (!selectedOrder) return;
+  const order = await api('orders/' + encodeURIComponent(selectedOrder));
+  document.getElementById('timelineTitle').textContent = `${order.id} · ${order.status}`;
+  list('eventTimeline', order.timeline, event => [event.event_type,
+    `${new Date(event.created_at).toLocaleString()}${event.reason ? ' · ' + event.reason : ''}`]);
+}
 async function refresh() {
-  const [orders, inventory, payments, notifications] = await Promise.all([
-    requestJson("/api/orders"),
-    requestJson("/api/inventory"),
-    requestJson("/api/payments"),
-    requestJson("/api/notifications"),
-  ]);
-
-  counts.orders.textContent = orders.length;
-  counts.payments.textContent = payments.length;
-  counts.notifications.textContent = notifications.length;
-
-  renderList(views.orders, orders, (order) => ({
-    title: `${order.id} · ${order.status}`,
-    detail: `${order.customer_id} · ${new Date(order.created_at).toLocaleString()}`,
-  }));
-
-  renderList(views.inventory, inventory, (item) => ({
-    title: item.product_id,
-    detail: `${item.quantity} units available`,
-  }));
-
-  renderList(views.payments, payments, (payment) => ({
-    title: `${payment.order_id} · ${payment.status}`,
-    detail: new Date(payment.created_at).toLocaleString(),
-  }));
-
-  renderList(views.notifications, notifications, (notification) => ({
-    title: `${notification.order_id} · ${notification.event_type}`,
-    detail: `${notification.status} · ${new Date(notification.created_at).toLocaleString()}`,
-  }));
-}
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const payload = {
-    customer_id: document.querySelector("#customerId").value,
-    items: [
-      {
-        product_id: document.querySelector("#productId").value,
-        quantity: Number(document.querySelector("#quantity").value),
-      },
-    ],
-  };
-
-  formStatus.textContent = "Creating order...";
+  if (refreshing) return;
+  refreshing = true;
   try {
-    const order = await requestJson("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    formStatus.textContent = `Created ${order.order_id}`;
-    setTimeout(refresh, 900);
-  } catch (error) {
-    formStatus.textContent = `Request failed: ${error.message}`;
-  }
+    const [orders, inventory, payments, notifications] = await Promise.all(['orders','inventory','payments','notifications'].map(path => api(path)));
+    for (const [id, rows] of [['orderCount',orders],['paymentCount',payments],['notificationCount',notifications]]) document.getElementById(id).textContent = rows.length;
+    list('orders', orders, row => [`${row.id} · ${row.status}`, row.customer_id], true);
+    list('inventory', inventory, row => [row.product_id, `${row.quantity} units available`]);
+    list('payments', payments, row => [row.order_id, `${row.status} · simulated payment`]);
+    list('notifications', notifications, row => [row.order_id, `${row.event_type} · local record`]);
+    await showTimeline();
+  } catch (error) { showError(error); } finally { refreshing = false; }
+}
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = form.querySelector('button'); button.disabled = true;
+  status.textContent = 'Submitting order…';
+  try {
+    const order = await api('orders', {method:'POST', headers:{'Content-Type':'application/json', 'Idempotency-Key':crypto.randomUUID()}, body:JSON.stringify({customer_id:document.getElementById('customerId').value.trim(), items:[{product_id:document.getElementById('productId').value, quantity:Number(document.getElementById('quantity').value)}]})});
+    selectedOrder = order.order_id;
+    status.textContent = `Accepted ${order.order_id}. Processing asynchronously.`;
+    await refresh();
+  } catch (error) { showError(error); } finally { button.disabled = false; }
 });
-
-refreshButton.addEventListener("click", refresh);
-refresh();
-setInterval(refresh, 5000);
+document.getElementById('refreshButton').addEventListener('click', refresh);
+refresh(); setInterval(refresh, 3000);

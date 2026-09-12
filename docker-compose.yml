@@ -6,41 +6,57 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: orders
     ports:
-      - "5432:5432"
+    - 5432:5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+    - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d orders"]
+      test:
+      - CMD-SHELL
+      - pg_isready -U app -d orders
       interval: 5s
       timeout: 5s
       retries: 10
-
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     ports:
-      - "5672:5672"
-      - "15672:15672"
+    - 5672:5672
+    - 15672:15672
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test:
+      - CMD
+      - rabbitmq-diagnostics
+      - ping
       interval: 5s
       timeout: 5s
       retries: 10
-
   order-service:
-    build: ./services/order-service
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/orders
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     ports:
-      - "8001:8000"
+    - 8001:8000
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
   inventory-service:
-    build: ./services/inventory-service
+    build:
+      context: .
+      dockerfile: services/inventory-service/Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/orders
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
@@ -49,9 +65,20 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
   payment-service:
-    build: ./services/payment-service
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/orders
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
@@ -60,29 +87,59 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
   notification-service:
-    build: ./services/notification-service
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/orders
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     ports:
-      - "8004:8000"
+    - 8004:8000
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
   frontend:
     build: ./frontend
     ports:
-      - "8080:80"
+    - 8080:8080
     depends_on:
-      - order-service
-      - inventory-service
-      - payment-service
-      - notification-service
-
+    - order-service
+    - inventory-service
+    - payment-service
+    - notification-service
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - -O
+      - /dev/null
+      - http://127.0.0.1:8080/
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
-  postgres_data:
+  postgres_data: null

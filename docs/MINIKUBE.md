@@ -49,6 +49,8 @@ kubectl --context=order-platform apply -f k8s/config/configmap.yaml -f k8s/postg
 
 Stop if a command fails. The initializer requires an empty namespace (no PVCs, StatefulSets or secrets), generates random credentials and sends them to Kubernetes over stdin. It does not print or save passwords and uses create rather than overwrite. This is local lab secret management. The fresh-lab procedure is documented but has not been executed against a new cluster; the existing lab is the validated path.
 
-## Current limitations
+## Current release and GitOps
 
-Orders still report created after processing; status propagation is Stage 2. Empty item lists and duplicate events remain known gaps. Payment and notification are simulated records. This uses plain Kubernetes manifests; do not install the legacy Helm chart over it. Helm alignment, security hardening, GitOps and Terraform/Azure follow later.
+The current application implements status propagation, timelines, outbox/inbox transactions and duplicate handling. See OPERATIONS.md and PORTFOLIO_REPORT.md for evidence and remaining limits. The chart is now application-only; do not adopt the database StatefulSets or credentials into a Helm release.
+
+Use -BuildOnly to build without applying and -UseExistingImages to explicitly deploy an already-built tag. Once Argo CD owns the application, build the images locally, update the Helm values in Git and let Argo reconcile instead of direct apply. The initial old-to-new history migration is scripts/migrate-baseline.py and is not a routine redeployment step.

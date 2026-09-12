@@ -1,41 +1,71 @@
-# Event-Driven Order Processing Platform
+# Event-driven Order Platform | Kubernetes DevOps Portfolio
 
-**Current implementation: Python/FastAPI, JavaScript dashboard, Nginx, RabbitMQ and PostgreSQL.**
-Docker Compose, Minikube manifests and a Helm chart are included. AKS, Terraform and Azure Service Bus remain planned migration work; the repository name describes that target.
+A hands-on DevOps portfolio: four Python/FastAPI services process orders through RabbitMQ, with PostgreSQL transactions, a browser dashboard, Kubernetes deployment, delivery automation and operational evidence.
 
-## Workflow
+**Current environment: local Minikube.** The repository name describes the Azure direction; Terraform for AKS/ACR is prepared and validated, not deployed. Payments are simulations and notifications are database records. The frontend is HTML/CSS/JavaScript served by unprivileged Nginx.
 
-1. The browser calls APIs through Nginx.
-2. Order stores an order and publishes `order.created`.
-3. Inventory reserves stock and publishes `inventory.reserved` or `inventory.failed`.
-4. Payment consumes reservations, records a simulated payment and publishes `payment.completed`.
-5. Notification records several workflow events. It does not send real email or SMS.
+## Project at a glance
 
-All services use separate tables within the shared PostgreSQL application database.
+**Purpose:** demonstrate deployment, reliability, observability and troubleshooting for an asynchronous order-processing application.
 
-## Repository layout
+**Stack:** Python/FastAPI · Docker · Kubernetes/Minikube · Helm · Argo CD · RabbitMQ · PostgreSQL · Prometheus · Grafana · JMeter · Bandit · pip-audit · Trivy · ZAP. Optional Azure infrastructure is defined in Terraform.
 
-- `services/`: four backend services and Dockerfiles.
-- `frontend/`: static dashboard and Nginx configuration.
-- `k8s/`: existing Minikube deployment manifests.
-- `helm/order-platform/`: alternative Helm packaging; do not install over existing plain-manifest resources without a migration plan.
-- `tests/`: consumer recovery and end-to-end smoke checks.
-- `infra/vault/`: existing optional Vault lab configuration.
-- `infra/terraform/`, `deploy/argocd/`, `pipelines/`: future work placeholders.
+| Engineering work | Evidence |
+| --- | --- |
+| Reliable events and stock handling | Outbox/inbox transactions, duplicate-delivery, concurrent-stock and broker-recovery checks |
+| GitOps deployment | Argo CD Synced/Healthy; deliberate replica drift automatically corrected |
+| Operational troubleshooting | Database DNS failure diagnosed from logs; final 25-user test completed 7,500 read requests without errors |
+| Security verification | Source/dependency/image checks, SBOM and passive web scan; unresolved findings documented |
 
-## Run on the existing Minikube cluster
+**Start here:** [Screenshots and project overview](docs/EMPLOYER_OVERVIEW.md) · [Measured results](docs/PORTFOLIO_REPORT.md) · [Resume entry](docs/RESUME_PROJECT.md)
 
-See [Minikube instructions](docs/MINIKUBE.md). Existing data and secrets must be preserved during redeployment.
+![Completed order and event timeline](docs/screenshots/order-completed.png)
+*Actual local application: an order progresses from creation through stock reservation to simulated payment completion.*
 
-## Local Docker Compose alternative
+![Argo CD application status](docs/screenshots/argocd.png)
+*Actual GitOps application, captured Healthy and Synced.*
 
-Run `docker compose up --build` and open `http://localhost:8080`. Compose and the legacy Helm chart contain disposable lab credentials only; never use those defaults for a public or cloud deployment.
+![Implemented local architecture](docs/architecture.svg)
 
-## Documentation
+## What to review first
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Review and limitations](docs/REVIEW.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Validation](docs/VALIDATION.md)
+- [Architecture and design tradeoffs](docs/ARCHITECTURE.md)
+- [Demonstration guide](docs/DEMO.md)
+- [Spoken interview walkthrough and answers](docs/INTERVIEW_WALKTHROUGH.md)
+- [Validation evidence and remaining limitations](docs/PORTFOLIO_REPORT.md)
+- [Performance investigation](docs/PERFORMANCE.md)
+- [Security findings and remediation](docs/SECURITY.md)
+- [Local setup](docs/MINIKUBE.md) and [operations](docs/OPERATIONS.md)
 
-No real payment processing or external notification delivery is implemented. Order status currently remains `created`; duplicate-event handling and transactional event publication need improvement.
+## Engineering features
+
+- Order progress and per-order event timeline, including insufficient-stock failures.
+- Atomic business changes and outbox writes; confirmed publishing with duplicate-safe consumers.
+- PostgreSQL row locks for stock reservations, request idempotency and bounded retries/dead-letter handling.
+- Docker images running without root, read-only application filesystems, health probes, resource limits and no mounted service-account token.
+- An application-only Helm chart; Argo CD configuration excludes database storage and secrets.
+- GitHub Actions workflow for tests, SAST, dependency audit, container scanning, SBOMs, passive DAST and Helm validation.
+- Prometheus metrics/alerts, a provisioned Grafana dashboard, and a repeatable JMeter workload.
+
+## Quick local development
+
+```sh
+docker compose -p order-dev up -d --build --wait
+python tests/local_scenarios.py http://127.0.0.1:8080
+```
+
+Compose credentials are disposable examples. The existing Minikube lab uses separate, uncommitted credentials. Tests leave labelled order records; the acceptance suite consumes one unit of stock. See the reports for checks actually executed and for issues still open.
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| services/, shared/ | Business APIs, outbox/inbox and instrumentation |
+| frontend/ | Browser dashboard and Nginx configuration |
+| k8s/ | Local bootstrap manifests |
+| helm/order-platform/ | Stateless application release chart |
+| deploy/argocd/ | Restricted project and GitOps application |
+| deploy/observability/ | Prometheus, alert rules and Grafana |
+| tests/ | Transaction, integration, failure and load checks |
+| infra/terraform/ | Optional Azure infrastructure |
+| docs/ | Demo, evidence, operations and tradeoffs |
