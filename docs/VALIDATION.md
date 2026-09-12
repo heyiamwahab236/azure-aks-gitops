@@ -1,3 +1,5 @@
+> Historical baseline document. See README.md and PORTFOLIO_REPORT.md for the current implementation.
+
 # Validation — 12 September 2026
 
 ## Environment

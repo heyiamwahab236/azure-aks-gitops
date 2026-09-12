@@ -1,3 +1,5 @@
+> Historical baseline document. See README.md and PORTFOLIO_REPORT.md for the current implementation.
+
 # Architecture review
 
 Reviewed source: D:/Job Apply/4_Projects/Resume projects/multiservice python project

@@ -1,3 +1,5 @@
+> Historical baseline document. See README.md and PORTFOLIO_REPORT.md for the current implementation.
+
 # Event-Driven Order Processing Platform Guide
 
 ## 1. Project Goal

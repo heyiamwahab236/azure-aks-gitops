@@ -1,27 +1,12 @@
-# Roadmap
+# Four-stage delivery plan
 
-Start with the [implementation plan](IMPLEMENTATION_PLAN.md). Each stage has a checklist and required verification. Use the [stage report template](STAGE_REPORT_TEMPLATE.md) to record results and an interview explanation.
+The original repeatable Minikube baseline is complete. Related follow-up work is grouped into four stages:
 
-## Existing baseline
-- [x] Private repository initialized
-- [x] Existing source imported with local secrets excluded
-- [x] Initial Minikube redeployment and end-to-end smoke test passed
+| Stage | Scope | Verification |
+| --- | --- | --- |
+| 1. Complete the application | Status, timeline, failure handling, outbox, deduplication, stock locks | Transaction tests and live order/reliability checks |
+| 2. Automate deployment | Containers, probes/resources, Helm, CI and GitOps | Image builds, rollouts, Helm validation and delivery evidence |
+| 3. Prove performance and security | Metrics, dashboard/alerts, JMeter, SAST/SCA/image scans/SBOM/DAST | Measured reports and remediation |
+| 4. Prepare the portfolio | Architecture, demo, runbooks and optional Azure Terraform | Reviewable documentation and Terraform validation |
 
-See [validation evidence](VALIDATION.md). Stage 01 is complete; see [its report](STAGE_01_REPORT.md). Subsequent improvement stages remain open.
-
-## Implementation stages
-- [x] 01 — Repeatable local baseline
-- [ ] 02 — Order status, event timeline and failure behavior
-- [ ] 03 — Reliable messaging and duplicate-event protection
-- [ ] 04 — Kubernetes hardening and Helm alignment
-- [ ] 05 — Automated tests and CI
-- [ ] 06 — Logs, metrics, dashboards and alerts
-- [ ] 07 — JMeter load testing and bottleneck investigation
-- [ ] 08 — Security checks, SBOMs and remediation
-- [ ] 09 — GitOps delivery and recovery
-- [ ] 10 — Terraform infrastructure and Azure migration
-- [ ] 11 — Employer-facing documentation and demonstrations
-
-## Next session
-Begin stage 02: propagate order status, expose an event timeline and clarify failure behavior. Preserve database volumes and existing secrets.
-
+See [PORTFOLIO_REPORT.md](PORTFOLIO_REPORT.md) for current verification and remaining dependencies. Azure deployment is optional and requires subscription, region and budget choices. The historical Stage 01 report describes the original baseline, not the current application's limitations.
