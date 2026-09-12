@@ -14,6 +14,8 @@ Application event logs include service, order ID, event type and outcome. Promet
 
 ## Dashboard connections (separate terminals)
 
+For Argo CD, run `kubectl --context=order-platform -n argocd port-forward svc/argocd-server 8081:443 --address=127.0.0.1` and open https://localhost:8081 in external Chrome. Handle the local certificate warning yourself and sign in privately. The embedded Codex browser rejects the self-signed certificate.
+
 ```powershell
 kubectl --context=order-platform -n order-platform port-forward svc/frontend-service 18080:80 --address=127.0.0.1
 kubectl --context=order-platform -n order-observability port-forward svc/prometheus 19090:9090 --address=127.0.0.1

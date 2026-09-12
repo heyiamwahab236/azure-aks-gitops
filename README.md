@@ -10,6 +10,7 @@ A hands-on DevOps portfolio: four Python/FastAPI services process orders through
 
 - [Architecture and design tradeoffs](docs/ARCHITECTURE.md)
 - [Demonstration guide](docs/DEMO.md)
+- [Spoken interview walkthrough and answers](docs/INTERVIEW_WALKTHROUGH.md)
 - [Validation evidence and remaining limitations](docs/PORTFOLIO_REPORT.md)
 - [Performance investigation](docs/PERFORMANCE.md)
 - [Security findings and remediation](docs/SECURITY.md)

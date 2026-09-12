@@ -1,13 +1,15 @@
 # Ten-minute demonstration
 
+Start with [the spoken walkthrough and interview answers](INTERVIEW_WALKTHROUGH.md).
+
 1. Open the browser dashboard at http://localhost:18080. Explain the four service responsibilities and show the architecture.
 2. Submit a one-unit order with a unique demonstration customer. Select it and watch the timeline reach completed. Show the simulated payment and notification records.
 3. Submit more than available stock. Show failed status, inventory.failed and its reason, with no payment.
 4. Explain the outbox/inbox transaction boundary using shared/runtime.py. Show the duplicate-delivery and competing-stock test results in PORTFOLIO_REPORT.md.
 5. Open Grafana at http://localhost:13000/d/order-platform. Show request rate, p95 latency, consumer connections and pending events. Open Prometheus alerts at http://localhost:19090/alerts.
 6. Walk through the JMeter before/after evidence. Describe what the DNS logs established and what a laptop test cannot establish about production capacity.
-7. Open the GitHub Actions workflow and its available run/report evidence. Explain the difference between SAST, dependency analysis, image scanning, SBOM generation and passive DAST.
-8. Show the Helm chart and Argo CD application configuration. Only claim live GitOps reconciliation if its verification is marked complete in the report.
+7. Show the local security evidence. Explain SAST, dependency analysis, image scanning, SBOM generation and passive DAST. The GitHub workflow is prepared, but hosted jobs did not start because of the account billing/spending-limit restriction; no paid execution is needed for this demo.
+8. Show the Helm chart and Argo CD application: private repository authentication, Synced/Healthy status and replica drift recovery were verified. It watches stage/portfolio-completion.
 9. Show Terraform validation and explain which Azure details are still required. Do not describe AKS as deployed.
 
 ## Optional live recovery drill
