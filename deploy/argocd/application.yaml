@@ -27,7 +27,7 @@ spec:
   project: order-platform
   source:
     repoURL: git@github.com:heyiamwahab236/azure-aks-gitops.git
-    targetRevision: main
+    targetRevision: stage/portfolio-completion
     path: helm/order-platform
   destination:
     server: https://kubernetes.default.svc

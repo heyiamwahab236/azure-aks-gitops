@@ -16,7 +16,7 @@
 - Final load run: 7,500 requests, zero errors; notification p95 1,492 ms exceeds the 1,000 ms target. See PERFORMANCE.md.
 - Broker outage recovery passed: order ord-1e43ae389894 was accepted while RabbitMQ was down and completed after recovery.
 - Draft PR #2 is published. GitHub Actions run 34691690532 could not start because GitHub reports failed account payments or a spending-limit restriction. No remote tests ran.
-- Argo CD and its Application are installed against stage/portfolio-completion. The first key was passphrase-protected and unusable unattended; a corrected key is prepared for user registration. Reconciliation/drift recovery is not yet claimed.
+- Argo CD authenticated with the corrected read-only deploy key and reached Synced/Healthy on stage/portfolio-completion. A deliberate notification-service replica change from one to two was automatically restored to one, verifying self-healing.
 - Azure deployment is intentionally pending subscription, region and budget decisions. Terraform validation is not proof of cloud deployment.
 
 ## Limitations
