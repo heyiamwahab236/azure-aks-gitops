@@ -13,9 +13,10 @@
 
 ## Verification in progress / external dependencies
 
-- Final stable load rerun and broker recovery drill are being recorded.
-- GitHub CI workflow is implemented; remote run verification is pending publication.
-- Argo CD is installed. Private-repository read-only access requires user confirmation before the prepared deploy key can be registered. Reconciliation/drift recovery is not yet claimed.
+- Final load run: 7,500 requests, zero errors; notification p95 1,492 ms exceeds the 1,000 ms target. See PERFORMANCE.md.
+- Broker outage recovery passed: order ord-1e43ae389894 was accepted while RabbitMQ was down and completed after recovery.
+- Draft PR #2 is published. GitHub Actions run 34691690532 could not start because GitHub reports failed account payments or a spending-limit restriction. No remote tests ran.
+- Argo CD and its Application are installed against stage/portfolio-completion. The first key was passphrase-protected and unusable unattended; a corrected key is prepared for user registration. Reconciliation/drift recovery is not yet claimed.
 - Azure deployment is intentionally pending subscription, region and budget decisions. Terraform validation is not proof of cloud deployment.
 
 ## Limitations

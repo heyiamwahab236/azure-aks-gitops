@@ -398,5 +398,5 @@
     }
   ],
   "frontend_base_after_update_high_critical": 0,
-  "dast": "Initial passive scan: one medium CSP finding and five low header/version findings; headers remediated, verification pending."
+  "dast": "Final passive baseline: zero low/medium/high alerts, two informational alerts."
 }

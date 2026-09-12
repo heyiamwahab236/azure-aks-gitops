@@ -9,7 +9,7 @@ The project implements security checks and remediation; it is not a production s
 | Container scan | Trivy, OS and installed packages | Python image retains vendor-unfixed high/critical package findings; tracked in evidence/security-summary.json |
 | Frontend image | Trivy, replacement unprivileged Nginx base | Zero high/critical findings in replacement base scan |
 | SBOM | Trivy CycloneDX | Runtime package inventory generated; CI retains per-image reports |
-| Passive DAST | OWASP ZAP baseline against local frontend | CSP and header findings identified and remediated; see final report for rerun result |
+| Passive DAST | OWASP ZAP baseline against local frontend | Final rerun: zero low/medium/high alerts; two informational alerts (modern web application and cacheable content) |
 
 The frontend now uses a digest-pinned current unprivileged Nginx image, disables server version disclosure and sends CSP, anti-framing, content-type, permissions and cross-origin isolation headers. Backend images run as UID 10001. Application pods use a read-only root filesystem, no privilege escalation, dropped capabilities, RuntimeDefault seccomp and no service-account token.
 
