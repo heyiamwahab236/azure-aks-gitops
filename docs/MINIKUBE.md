@@ -1,35 +1,54 @@
-# Existing Minikube deployment
+# Repeatable local deployment
 
-Use the `order-platform` profile and namespace explicitly. This avoids other Kubernetes contexts.
+Run from the repository root in PowerShell, with Docker Desktop running and docker, minikube, kubectl and Python 3 on PATH. Builds need access to container and Python package registries. All commands target the order-platform profile, context and namespace.
+
+## Existing lab (normal workflow)
 
 ```powershell
 minikube start -p order-platform
-kubectl --context=order-platform get nodes
-kubectl --context=order-platform -n order-platform get pods,pvc
+./scripts/deploy-local.ps1
 ```
 
-## Secrets
+The script checks Docker, cluster, secret names and dependency readiness; records PVC identities; builds five images with a fresh tag; verifies images exist; validates application manifests on the server; applies them and waits for five deployments. It confirms PVC identities and bindings are unchanged. Tags are rendered in memory; source manifests remain unchanged.
 
-`k8s/config/secrets.yaml` is deliberately excluded from Git. The existing cluster requires `postgres-credentials` (including DATABASE_URL) and `rabbitmq-credentials` (RABBITMQ_URL). Preserve the existing secrets and database passwords. For a new cluster, provision credentials locally before deployment; do not commit them.
-
-## Application images
-
-Build all service images in Minikube using the same tag referenced in the manifests. The imported backend manifests reference `portfolio-20260912`; the frontend references `portfolio-20260912`. Prefer a new immutable tag on each update.
+For a recorded release, supply a unique tag:
 
 ```powershell
-minikube -p order-platform image build -t order-service:portfolio-20260912 ./services/order-service
-minikube -p order-platform image build -t inventory-service:portfolio-20260912 ./services/inventory-service
-minikube -p order-platform image build -t payment-service:portfolio-20260912 ./services/payment-service
-minikube -p order-platform image build -t notification-service:portfolio-20260912 ./services/notification-service
-minikube -p order-platform image build -t order-platform-frontend:portfolio-20260912 ./frontend
+./scripts/deploy-local.ps1 -Tag local-my-change-001
 ```
 
-For an existing cluster, apply only application manifests after reviewing the diff. Do not delete the namespace, PVCs, StatefulSets or Vault storage.
+Existing tags are rejected. After a build failure, correct the error and rerun with a new tag. Nothing is applied until all images build successfully. An apply/rollout failure can leave a partial application deployment: inspect pods and events, fix the problem and rerun. There is no automatic rollback. The script never applies storage manifests or overwrites secrets.
+
+## Exercise the application
+
+Keep this running in a separate terminal:
 
 ```powershell
-kubectl --context=order-platform apply -f k8s/order -f k8s/inventory -f k8s/payment -f k8s/notification -f k8s/frontend
-kubectl --context=order-platform -n order-platform port-forward svc/frontend-service 8080:80
+kubectl --context=order-platform -n order-platform port-forward svc/frontend-service 8080:80 --address=127.0.0.1
 ```
 
-Run `python tests/smoke.py http://localhost:8080` to create one small test order and verify its payment and notification records. This test consumes one unit of stock.
+Open http://localhost:8080, then run:
 
+```powershell
+python tests/local_scenarios.py http://localhost:8080
+```
+
+This checks successful processing, insufficient stock, and invalid quantities/missing items. Run without concurrent orders. It leaves two labelled orders and their records and consumes one stock unit. The no-payment assertion for insufficient stock observes ten seconds after the failure event; it does not prove absence indefinitely. The smaller tests/smoke.py remains available.
+
+## Brand-new disposable lab only
+
+Skip this for the existing lab. Never regenerate credentials for populated volumes: credentials must match the database's existing password.
+
+```powershell
+minikube start -p order-platform
+kubectl --context=order-platform create namespace order-platform
+python scripts/init-local-secrets.py
+kubectl --context=order-platform apply -f k8s/config/configmap.yaml -f k8s/postgres -f k8s/rabbitmq
+./scripts/deploy-local.ps1
+```
+
+Stop if a command fails. The initializer requires an empty namespace (no PVCs, StatefulSets or secrets), generates random credentials and sends them to Kubernetes over stdin. It does not print or save passwords and uses create rather than overwrite. This is local lab secret management. The fresh-lab procedure is documented but has not been executed against a new cluster; the existing lab is the validated path.
+
+## Current limitations
+
+Orders still report created after processing; status propagation is Stage 2. Empty item lists and duplicate events remain known gaps. Payment and notification are simulated records. This uses plain Kubernetes manifests; do not install the legacy Helm chart over it. Helm alignment, security hardening, GitOps and Terraform/Azure follow later.

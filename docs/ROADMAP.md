@@ -7,10 +7,10 @@ Start with the [implementation plan](IMPLEMENTATION_PLAN.md). Each stage has a c
 - [x] Existing source imported with local secrets excluded
 - [x] Initial Minikube redeployment and end-to-end smoke test passed
 
-See [validation evidence](VALIDATION.md). The repeatability and improvement stages below remain open.
+See [validation evidence](VALIDATION.md). Stage 01 is complete; see [its report](STAGE_01_REPORT.md). Subsequent improvement stages remain open.
 
 ## Implementation stages
-- [ ] 01 — Repeatable local baseline
+- [x] 01 — Repeatable local baseline
 - [ ] 02 — Order status, event timeline and failure behavior
 - [ ] 03 — Reliable messaging and duplicate-event protection
 - [ ] 04 — Kubernetes hardening and Helm alignment
@@ -23,4 +23,5 @@ See [validation evidence](VALIDATION.md). The repeatability and improvement stag
 - [ ] 11 — Employer-facing documentation and demonstrations
 
 ## Next session
-Begin stage 01 on the existing order-platform Minikube profile. Rebuild and redeploy from this repository, validate the order flow, and record the results. Preserve database volumes and existing secrets.
+Begin stage 02: propagate order status, expose an event timeline and clarify failure behavior. Preserve database volumes and existing secrets.
+
