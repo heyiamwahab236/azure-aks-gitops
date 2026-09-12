@@ -1,0 +1,37 @@
+global:
+  tlsDisable: true
+
+injector:
+  enabled: true
+
+server:
+  dev:
+    enabled: false
+
+  standalone:
+    enabled: true
+
+    config: |
+      ui = true
+
+      listener "tcp" {
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = 1
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+  dataStorage:
+    enabled: true
+    size: 1Gi
+    mountPath: "/vault/data"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

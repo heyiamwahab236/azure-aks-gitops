@@ -1,11 +1,11 @@
-# Implementation roadmap
+# Roadmap
 
-- [x] Initialize documentation and folder structure
-- [ ] Import and review actual project files
-- [ ] React/TypeScript frontend served by Nginx; Go and Python backend services
-- [ ] Azure Service Bus messaging and PostgreSQL persistence
-- [ ] Terraform infrastructure, AKS, ACR, Docker and Helm
-- [ ] Azure DevOps builds and Git-managed delivery through Argo CD
-- [ ] Key Vault, scoped access and application monitoring
-- [ ] Verify reproduction and cleanup instructions
-- [ ] Record a short demo and link evidence
+- [x] Initialize private repository
+- [x] Import existing application source, excluding local secrets
+- [ ] Verify existing Minikube deployment and end-to-end flow
+- [ ] Fix order status and duplicate-event handling
+- [ ] Align Helm and plain manifests
+- [ ] Add Azure Terraform infrastructure
+- [ ] Integrate Azure Service Bus
+- [ ] Add image publishing, GitOps delivery and monitoring
+- [ ] Record demo and troubleshooting evidence

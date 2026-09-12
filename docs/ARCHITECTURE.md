@@ -1,5 +1,22 @@
-# Architecture
+# Current architecture
 
-Status: design pending review against actual implementation.
+```mermaid
+flowchart TD
+ B[Browser: HTML/CSS/JavaScript] --> N[Nginx]
+ N --> O[Order API]
+ N --> I[Inventory API + consumer]
+ N --> P[Payment API + consumer]
+ N --> Q[Notification API + consumer]
+ O -->|order.created| R[RabbitMQ: order.events]
+ R -->|order.created| I
+ I -->|inventory.reserved / inventory.failed| R
+ R -->|inventory.reserved| P
+ P -->|payment.completed| R
+ R -->|Workflow events| Q
+ O --> D[(PostgreSQL)]
+ I --> D
+ P --> D
+ Q --> D
+```
 
-Document components, resource ownership, authentication, network boundaries, data flow, and CI-to-deployment handoff. Add a diagram once the design is confirmed.
+Payment is simulated. Notification records events in the database. Azure services are future migration scope, not the local runtime.

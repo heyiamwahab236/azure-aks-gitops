@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order Platform Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Event-driven platform</p>
+          <h1>Order Processing Dashboard</h1>
+        </div>
+        <button id="refreshButton" type="button">Refresh</button>
+      </section>
+
+      <section class="layout">
+        <form id="orderForm" class="panel">
+          <h2>Create Order</h2>
+          <label>
+            Customer ID
+            <input id="customerId" name="customerId" value="cust-1" required>
+          </label>
+          <label>
+            Product
+            <select id="productId" name="productId">
+              <option value="sku-1">sku-1</option>
+              <option value="sku-2">sku-2</option>
+            </select>
+          </label>
+          <label>
+            Quantity
+            <input id="quantity" name="quantity" type="number" min="1" value="2" required>
+          </label>
+          <button type="submit">Place Order</button>
+          <p id="formStatus" class="status"></p>
+        </form>
+
+        <section class="timeline">
+          <div class="metric">
+            <span id="orderCount">0</span>
+            <p>Orders</p>
+          </div>
+          <div class="metric">
+            <span id="paymentCount">0</span>
+            <p>Payments</p>
+          </div>
+          <div class="metric">
+            <span id="notificationCount">0</span>
+            <p>Notifications</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Orders</h2>
+          <div id="orders" class="list"></div>
+        </div>
+        <div class="panel">
+          <h2>Inventory</h2>
+          <div id="inventory" class="list"></div>
+        </div>
+        <div class="panel">
+          <h2>Payments</h2>
+          <div id="payments" class="list"></div>
+        </div>
+        <div class="panel">
+          <h2>Notifications</h2>
+          <div id="notifications" class="list"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

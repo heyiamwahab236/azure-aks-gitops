@@ -18,3 +18,8 @@ __pycache__/
 dist/
 .DS_Store
 Thumbs.db
+
+# Local Kubernetes credentials and databases
+k8s/config/secrets.yaml
+*.db
+*.sqlite*

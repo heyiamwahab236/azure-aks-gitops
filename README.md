@@ -1,30 +1,41 @@
-# Azure AKS Application with GitOps Delivery
+# Event-Driven Order Processing Platform
 
-**Status: scaffold only — implementation pending.**
+**Current implementation: Python/FastAPI, JavaScript dashboard, Nginx, RabbitMQ and PostgreSQL.**
+Docker Compose, Minikube manifests and a Helm chart are included. AKS, Terraform and Azure Service Bus remain planned migration work; the repository name describes that target.
 
-An event-driven order-processing application with Terraform-managed Azure infrastructure and automated delivery.
+## Workflow
 
-This repository is initialized for future project files. The items below describe intended scope, not completed or validated functionality.
+1. The browser calls APIs through Nginx.
+2. Order stores an order and publishes `order.created`.
+3. Inventory reserves stock and publishes `inventory.reserved` or `inventory.failed`.
+4. Payment consumes reservations, records a simulated payment and publishes `payment.completed`.
+5. Notification records several workflow events. It does not send real email or SMS.
 
-## Planned scope
+All services use separate tables within the shared PostgreSQL application database.
 
-- React/TypeScript frontend served by Nginx; Go and Python backend services
-- Azure Service Bus messaging and PostgreSQL persistence
-- Terraform infrastructure, AKS, ACR, Docker and Helm
-- Azure DevOps builds and Git-managed delivery through Argo CD
-- Key Vault, scoped access and application monitoring
+## Repository layout
 
-## Getting started
+- `services/`: four backend services and Dockerfiles.
+- `frontend/`: static dashboard and Nginx configuration.
+- `k8s/`: existing Minikube deployment manifests.
+- `helm/order-platform/`: alternative Helm packaging; do not install over existing plain-manifest resources without a migration plan.
+- `tests/`: consumer recovery and end-to-end smoke checks.
+- `infra/vault/`: existing optional Vault lab configuration.
+- `infra/terraform/`, `deploy/argocd/`, `pipelines/`: future work placeholders.
 
-No application or deployment commands are available yet. Import the actual project files first, then document verified prerequisites and setup commands.
+## Run on the existing Minikube cluster
+
+See [Minikube instructions](docs/MINIKUBE.md). Existing data and secrets must be preserved during redeployment.
+
+## Local Docker Compose alternative
+
+Run `docker compose up --build` and open `http://localhost:8080`. Compose and the legacy Helm chart contain disposable lab credentials only; never use those defaults for a public or cloud deployment.
 
 ## Documentation
 
-- [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Demo and evidence](docs/DEMO.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Review and limitations](docs/REVIEW.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Validation](docs/VALIDATION.md)
 
-## Current limitations
-
-No infrastructure has been provisioned, no CI/CD jobs are enabled, and no scan or test results are claimed by this scaffold.
+No real payment processing or external notification delivery is implemented. Order status currently remains `created`; duplicate-event handling and transactional event publication need improvement.
