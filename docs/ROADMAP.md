@@ -1,27 +1,32 @@
-# Roadmap
+# AKS delivery roadmap
 
-Start with the [implementation plan](IMPLEMENTATION_PLAN.md). Each stage has a checklist and required verification. Use the [stage report template](STAGE_REPORT_TEMPLATE.md) to record results and an interview explanation.
+AKS is the primary deployment target. Local tooling supports development and preserves earlier evidence; it is not the destination of the platform design.
 
-## Existing baseline
-- [x] Private repository initialized
-- [x] Existing source imported with local secrets excluded
-- [x] Initial Minikube redeployment and end-to-end smoke test passed
+## Available application foundation
 
-See [validation evidence](VALIDATION.md). Stage 01 is complete; see [its report](STAGE_01_REPORT.md). Subsequent improvement stages remain open.
+- [x] Four FastAPI services, Nginx dashboard, RabbitMQ and PostgreSQL.
+- [x] Dockerfiles, Kubernetes manifests and a Helm chart.
+- [x] Local Kubernetes baseline and smoke-test evidence.
+- [x] AKS architecture and delivery documentation.
 
-## Implementation stages
-- [x] 01 — Repeatable local baseline
-- [ ] 02 — Order status, event timeline and failure behavior
-- [ ] 03 — Reliable messaging and duplicate-event protection
-- [ ] 04 — Kubernetes hardening and Helm alignment
-- [ ] 05 — Automated tests and CI
-- [ ] 06 — Logs, metrics, dashboards and alerts
-- [ ] 07 — JMeter load testing and bottleneck investigation
-- [ ] 08 — Security checks, SBOMs and remediation
-- [ ] 09 — GitOps delivery and recovery
-- [ ] 10 — Terraform infrastructure and Azure migration
-- [ ] 11 — Employer-facing documentation and demonstrations
+The local baseline is documented in [validation](VALIDATION.md) and the [Stage 01 report](STAGE_01_REPORT.md).
 
-## Next session
-Begin stage 02: propagate order status, expose an event timeline and clarify failure behavior. Preserve database volumes and existing secrets.
+## Azure platform work
 
+- [ ] Adapt the Helm chart for cloud image references, secrets, persistent storage and readiness.
+- [ ] Define Azure networking, ACR, AKS and identities in Terraform.
+- [ ] Validate and publish versioned application images through CI.
+- [ ] Configure Argo CD for reviewed Helm releases.
+- [ ] Add Prometheus metrics, Grafana dashboards and actionable alerts.
+- [ ] Deploy an approved Azure environment and verify the complete workflow.
+- [ ] Record persistence, recovery, GitOps and alert evidence.
+- [ ] Document costs, retained data and resource cleanup.
+
+## Application improvements
+
+- [ ] Correct order status and event timeline.
+- [ ] Add duplicate-event protection and reliable event publication.
+- [ ] Protect inventory updates against concurrency errors.
+- [ ] Expand automated tests, security checks and measured load tests.
+
+See the [detailed plan](IMPLEMENTATION_PLAN.md) for acceptance criteria. No Azure implementation or deployment is marked complete by this documentation update.

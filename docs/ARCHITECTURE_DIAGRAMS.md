@@ -1,150 +1,50 @@
-# Architecture Diagrams
+# AKS and application diagrams
 
-## Local System Architecture
+The infrastructure and delivery diagrams are the target design. The event sequence describes the existing application behavior.
+
+## Azure delivery design
 
 ```mermaid
 flowchart LR
-    User[User Browser]
-    Frontend[Frontend Dashboard<br/>Nginx + HTML/CSS/JS]
-
-    Order[Order Service<br/>FastAPI]
-    Inventory[Inventory Service<br/>FastAPI Worker]
-    Payment[Payment Service<br/>FastAPI Worker]
-    Notification[Notification Service<br/>FastAPI Worker]
-
-    Rabbit[(RabbitMQ<br/>Topic Exchange)]
-    Postgres[(PostgreSQL)]
-
-    User --> Frontend
-
-    Frontend -->|POST /api/orders| Order
-    Frontend -->|GET /api/inventory| Inventory
-    Frontend -->|GET /api/payments| Payment
-    Frontend -->|GET /api/notifications| Notification
-
-    Order -->|save order| Postgres
-    Inventory -->|save inventory reservation| Postgres
-    Payment -->|save payment| Postgres
-    Notification -->|save notification| Postgres
-
-    Order -->|publish order.created| Rabbit
-    Rabbit -->|consume order.created| Inventory
-    Inventory -->|publish inventory.reserved / inventory.failed| Rabbit
-    Rabbit -->|consume inventory.reserved| Payment
-    Payment -->|publish payment.completed| Rabbit
-    Rabbit -->|consume events| Notification
+    Source[Application source] --> CI[CI validation and image build]
+    CI --> ACR[Azure Container Registry]
+    Config[Reviewed Helm configuration in Git] --> Argo[Argo CD]
+    TF[Terraform] --> AKS[Azure Kubernetes Service]
+    ACR -->|Pull versioned images| AKS
+    Argo -->|Reconcile workloads| AKS
+    AKS --> Prometheus[Prometheus]
+    Prometheus --> Grafana[Grafana]
 ```
 
-## Order Processing Sequence
+## Application workflow
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant FE as Frontend
-    participant OS as Order Service
+    participant FE as Nginx dashboard
+    participant OS as Order API
     participant MQ as RabbitMQ
-    participant IS as Inventory Service
-    participant PS as Payment Service
-    participant NS as Notification Service
+    participant IS as Inventory
+    participant PS as Payment
+    participant NS as Notification
     participant DB as PostgreSQL
-
     User->>FE: Submit order
-    FE->>OS: POST /api/orders
-    OS->>DB: Save order
+    FE->>OS: POST /orders
+    OS->>DB: Store order
     OS->>MQ: Publish order.created
-    OS-->>FE: Return order_id
-
+    OS-->>FE: Return order ID
     MQ->>IS: Deliver order.created
-    IS->>DB: Check and update stock
+    IS->>DB: Reserve stock
     IS->>MQ: Publish inventory.reserved
-
     MQ->>PS: Deliver inventory.reserved
-    PS->>DB: Save payment
+    PS->>DB: Record simulated payment
     PS->>MQ: Publish payment.completed
-
-    MQ->>NS: Deliver order/payment events
-    NS->>DB: Save notification records
-
-    FE->>OS: GET /api/orders
-    FE->>IS: GET /api/inventory
-    FE->>PS: GET /api/payments
-    FE->>NS: GET /api/notifications
+    MQ->>NS: Deliver workflow events
+    NS->>DB: Store notification records
 ```
 
-## Deployment Progression
+Insufficient stock produces `inventory.failed` and does not proceed to payment. This diagram does not imply transactional event publishing, duplicate-event protection or external payment delivery.
 
-```mermaid
-flowchart TD
-    Code[Source Code]
-    Compose[Docker Compose<br/>local development]
-    Images[Docker Images]
-    Minikube[Minikube<br/>local Kubernetes]
-    Helm[Helm Chart]
-    ACR[Azure Container Registry]
-    AKS[Azure Kubernetes Service]
-    AzureServices[Azure Service Bus<br/>Azure PostgreSQL<br/>Key Vault<br/>Monitor]
+## Runtime layout
 
-    Code --> Compose
-    Code --> Images
-    Images --> Minikube
-    Helm --> Minikube
-    Images --> ACR
-    ACR --> AKS
-    Helm --> AKS
-    AKS --> AzureServices
-```
-
-## Production Target Architecture
-
-```mermaid
-flowchart LR
-    User[User]
-    Ingress[AKS Ingress<br/>TLS + Routing]
-    Frontend[Frontend Pod]
-
-    Order[Order Service Pod]
-    Inventory[Inventory Service Pod]
-    Payment[Payment Service Pod]
-    Notification[Notification Service Pod]
-
-    ASB[(Azure Service Bus<br/>Topics + Subscriptions)]
-    PG[(Azure PostgreSQL<br/>Flexible Server)]
-    KV[(Azure Key Vault)]
-    Monitor[(Azure Monitor<br/>App Insights + Logs)]
-    ACR[(Azure Container Registry)]
-
-    User --> Ingress
-    Ingress --> Frontend
-    Frontend --> Order
-    Frontend --> Inventory
-    Frontend --> Payment
-    Frontend --> Notification
-
-    ACR --> Order
-    ACR --> Inventory
-    ACR --> Payment
-    ACR --> Notification
-    ACR --> Frontend
-
-    Order --> ASB
-    ASB --> Inventory
-    Inventory --> ASB
-    ASB --> Payment
-    Payment --> ASB
-    ASB --> Notification
-
-    Order --> PG
-    Inventory --> PG
-    Payment --> PG
-    Notification --> PG
-
-    Order --> KV
-    Inventory --> KV
-    Payment --> KV
-    Notification --> KV
-
-    Order --> Monitor
-    Inventory --> Monitor
-    Payment --> Monitor
-    Notification --> Monitor
-```
+See the complete [AKS architecture](ARCHITECTURE.md). Local development remains an optional way to exercise the same application; it is not the primary platform in the Azure design.

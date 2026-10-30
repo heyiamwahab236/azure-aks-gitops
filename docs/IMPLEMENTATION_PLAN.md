@@ -1,10 +1,12 @@
-# Implementation plan: local first, Azure later
+# AKS delivery and application improvement plan
 
 ## Starting point
 
+AKS is the primary platform target. This document records future implementation and acceptance criteria; it does not report an existing AKS deployment. Local development is optional supporting infrastructure.
+
 The application is imported and its existing Minikube deployment passed a smoke test on 12 September 2026. See VALIDATION.md for evidence. That is an initial baseline, not completion of the stages below. Payments are simulated and notifications are database records.
 
-Work through the stages in order. Finish the required checks and document results before moving on. No stage is complete merely because a tool has been installed.
+The stages separate application improvements from Azure platform delivery. Select dependencies deliberately, finish the relevant checks and record results before marking work complete. No stage is complete merely because a tool has been installed.
 
 | Stage | Work | Exit criteria | Suggested branch |
 |---|---|---|---|
@@ -103,9 +105,9 @@ Work through the stages in order. Finish the required checks and document result
 - [ ] Confirm subscription, region, spending limit and resource ownership before provisioning.
 - [ ] Choose PostgreSQL hosting and networking to fit the development budget.
 - [ ] Bootstrap remote Terraform state in Azure Storage and document state access.
-- [ ] Build one development environment first: resource group, network, ACR, AKS, Service Bus, Key Vault and scoped identities.
+- [ ] Build one development environment first: resource group, network, ACR, AKS, persistent PostgreSQL/RabbitMQ storage and scoped identities. Evaluate managed data services and Key Vault separately.
 - [ ] Review Terraform plan before apply; do not import or alter unrelated Azure resources.
-- [ ] Implement the Azure Service Bus messaging adapter; RabbitMQ configuration alone cannot perform the migration.
+- [ ] Keep RabbitMQ for the initial AKS deployment. If Azure Service Bus is selected later, implement and test a separate messaging adapter.
 - [ ] Verify application identity and access in the actual Azure deployment.
 - [ ] Repeat functional, delivery and observability checks; document teardown and resources retained for state/data.
 
@@ -122,4 +124,4 @@ This repository owns the application and its Azure delivery path. The self-manag
 
 ## Working agreement
 
-Explain each stage, implement a reviewable change, test locally, deploy to Minikube when needed, document evidence, then merge. Keep destructive failure exercises in a disposable environment. Never reset the existing cluster or erase PVCs as routine setup. Do not commit real secrets, Terraform state or private employer material.
+For future implementation work, prepare a reviewable change, validate it, deploy only to the agreed environment, and record the actual results before marking the stage complete. Keep destructive failure exercises in a disposable environment. Never reset the existing cluster or erase PVCs as routine setup. Do not commit real secrets, Terraform state or private employer material.
